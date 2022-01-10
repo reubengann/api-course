@@ -60,3 +60,12 @@ async def delete_post(post_id: int):
     post = find_post(post_id)
     my_posts.remove(post)
     return {"detail": f"Removed post with id {post_id}"}
+
+
+@app.put("/posts/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def update_post(post_id: int, post: Post):
+    old_post = find_post(post_id)
+    post = post.dict()
+    for k in post:
+        old_post[k] = post[k]
+    return {"detail": f"Updated post with id {post_id}"}
