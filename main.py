@@ -42,6 +42,10 @@ async def create_post(post: Post) -> dict:
 
 @app.get("/posts/{post_id}")
 async def get_post(post_id: int):
+    return find_post(post_id)
+
+
+def find_post(post_id):
     for post in my_posts:
         if post["id"] == post_id:
             return post
@@ -49,3 +53,10 @@ async def get_post(post_id: int):
         status_code=status.HTTP_404_NOT_FOUND,
         detail=f"Item with id {post_id} not found",
     )
+
+
+@app.delete("/posts/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_post(post_id: int):
+    post = find_post(post_id)
+    my_posts.remove(post)
+    return {"detail": f"Removed post with id {post_id}"}
