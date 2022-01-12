@@ -1,18 +1,30 @@
 from typing import Optional
 from fastapi import FastAPI, HTTPException, status
 from pydantic import BaseModel
+import sqlite3
+import os
+
 
 app = FastAPI()
+if not os.path.exists("test.db"):
+    conn = sqlite3.connect("test.db")
+    cursor = conn.cursor()
+    cursor.execute(
+        """create table posts (
+id integer primary key autoincrement,
+title varchar(255) not null,
+content text not null,
+published bool not null,
+rating int null
+)"""
+    )
+    conn.commit()
+else:
+    conn = sqlite3.connect("test.db")
+    cursor = conn.cursor()
 
-my_posts = [
-    {
-        "id": 1,
-        "title": "A well thought out englilsh paper",
-        "content": "Eating 5 batteries",
-        "published": True,
-        "rating": None,
-    }
-]
+
+cursor.row_factory = sqlite3.Row
 
 
 class Post(BaseModel):
@@ -29,43 +41,48 @@ async def root() -> dict:
 
 @app.get("/posts")
 async def get_posts() -> dict:
-    return {"posts": my_posts}
+    cursor.execute("SELECT * FROM posts")
+    return {"posts": cursor.fetchall()}
 
 
 @app.post("/posts", status_code=status.HTTP_201_CREATED)
 async def create_post(post: Post) -> dict:
-    new_post = post.dict()
-    new_post["id"] = len(my_posts) + 1
-    my_posts.append(new_post)
+    cursor.execute(
+        "INSERT INTO posts (title, content, published) VALUES (?, ?, ?) RETURNING *",
+        (post.title, post.content, post.published),
+    )
+    new_post = dict(cursor.fetchone())
+    conn.commit()
     return {"data": new_post}
 
 
 @app.get("/posts/{post_id}")
 async def get_post(post_id: int):
-    return find_post(post_id)
-
-
-def find_post(post_id):
-    for post in my_posts:
-        if post["id"] == post_id:
-            return post
-    raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND,
-        detail=f"Item with id {post_id} not found",
-    )
+    cursor.execute("SELECT * FROM posts WHERE id = ?", (post_id,))
+    post = cursor.fetchone()
+    if post is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    return post
 
 
 @app.delete("/posts/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_post(post_id: int):
-    post = find_post(post_id)
-    my_posts.remove(post)
-    return {"detail": f"Removed post with id {post_id}"}
+    cursor.execute("DELETE FROM posts WHERE id = ? RETURNING *", (post_id,))
+    deleted_post = cursor.fetchone()
+    if deleted_post is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    conn.commit()
+    return {"removed": deleted_post}
 
 
 @app.put("/posts/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def update_post(post_id: int, post: Post):
-    old_post = find_post(post_id)
-    post = post.dict()
-    for k in post:
-        old_post[k] = post[k]
-    return {"detail": f"Updated post with id {post_id}"}
+    cursor.execute(
+        "UPDATE posts SET title = ?, content = ?, published = ? WHERE id = ? RETURNING *",
+        (post.title, post.content, post.published, post_id),
+    )
+    updated_post = cursor.fetchone()
+    if updated_post is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    conn.commit()
+    return {"updated_post": updated_post}
