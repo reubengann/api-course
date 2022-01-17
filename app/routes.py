@@ -1,22 +1,16 @@
 from fastapi import Depends, FastAPI, HTTPException, Response, status
-from .database import engine, get_db
 from sqlalchemy.orm import Session
-from . import schemas
-from . import orm
+from .database import engine, get_db
+from . import schemas, orm
 
 app = FastAPI()
 orm.Base.metadata.create_all(engine)
 
 
-@app.get("/")
-async def root() -> dict:
-    return {"message": "Hello, world"}
-
-
 @app.get("/posts")
 async def get_posts(db: Session = Depends(get_db)) -> dict:
     result = db.query(orm.Post).all()
-    return {"posts": result}
+    return result
 
 
 @app.post("/posts", status_code=status.HTTP_201_CREATED)
@@ -25,15 +19,15 @@ async def create_post(post: schemas.Post, db: Session = Depends(get_db)) -> dict
     db.add(new_post)
     db.commit()
     db.refresh(new_post)
-    return {"data": new_post}
+    return new_post
 
 
-@app.get("/posts/{post_id}")
-async def get_post(post_id: int, db: Session = Depends(get_db)) -> dict:
+@app.get("/posts/{post_id}", response_model=schemas.PostResponse)
+async def get_post(post_id: int, db: Session = Depends(get_db)) -> orm.Post:
     post = db.query(orm.Post).filter(orm.Post.id == post_id).first()
     if post is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-    return {"post-detail": post}
+    return post
 
 
 @app.delete("/posts/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -53,4 +47,4 @@ async def update_post(post_id: int, post: schemas.Post, db: Session = Depends(ge
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     post_query.update(post.dict(), synchronize_session=False)
     db.commit()
-    return {"data": post_query.first()}
+    return post_query.first()
