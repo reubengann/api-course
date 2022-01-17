@@ -1,3 +1,4 @@
+from typing import List
 from fastapi import Depends, FastAPI, HTTPException, Response, status
 from sqlalchemy.orm import Session
 from .database import engine, get_db
@@ -7,13 +8,15 @@ app = FastAPI()
 orm.Base.metadata.create_all(engine)
 
 
-@app.get("/posts")
+@app.get("/posts", response_model=List[schemas.PostResponse])
 async def get_posts(db: Session = Depends(get_db)) -> dict:
     result = db.query(orm.Post).all()
     return result
 
 
-@app.post("/posts", status_code=status.HTTP_201_CREATED)
+@app.post(
+    "/posts", status_code=status.HTTP_201_CREATED, response_model=schemas.PostResponse
+)
 async def create_post(post: schemas.Post, db: Session = Depends(get_db)) -> dict:
     new_post = orm.Post(**post.dict())
     db.add(new_post)

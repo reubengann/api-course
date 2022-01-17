@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, Integer, String, Text
+from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text, func
 from .database import Base
 
 
@@ -8,4 +8,4 @@ class Post(Base):
     title = Column(String, nullable=False)
     content = Column(Text, nullable=False)
     published = Column(Boolean, default=True)
-    rating = Column(Integer)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
