@@ -1,8 +1,11 @@
 from typing import List
 from fastapi import Depends, FastAPI, HTTPException, Response, status
 from sqlalchemy.orm import Session
+
+from .utils import hash_password
 from .database import engine, get_db
 from . import schemas, orm
+
 
 app = FastAPI()
 orm.Base.metadata.create_all(engine)
@@ -51,3 +54,17 @@ async def update_post(post_id: int, post: schemas.Post, db: Session = Depends(ge
     post_query.update(post.dict(), synchronize_session=False)
     db.commit()
     return post_query.first()
+
+
+@app.post(
+    "/users",
+    status_code=status.HTTP_201_CREATED,
+    response_model=schemas.UserCreateResponse,
+)
+async def create_post(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    user.password = hash_password(user.password)
+    new_user = orm.User(**user.dict())
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return new_user
