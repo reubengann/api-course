@@ -6,17 +6,17 @@ from .. import schemas, orm
 from ..database import get_db
 from sqlalchemy.orm import Session
 
-router = APIRouter()
+router = APIRouter(prefix="/posts", tags=["Posts"])
 
 
-@router.get("/posts", response_model=List[schemas.PostResponse])
+@router.get("/", response_model=List[schemas.PostResponse])
 async def get_posts(db: Session = Depends(get_db)) -> dict:
     result = db.query(orm.Post).all()
     return result
 
 
 @router.post(
-    "/posts", status_code=status.HTTP_201_CREATED, response_model=schemas.PostResponse
+    "/", status_code=status.HTTP_201_CREATED, response_model=schemas.PostResponse
 )
 async def create_post(post: schemas.Post, db: Session = Depends(get_db)) -> dict:
     new_post = orm.Post(**post.dict())
@@ -26,7 +26,7 @@ async def create_post(post: schemas.Post, db: Session = Depends(get_db)) -> dict
     return new_post
 
 
-@router.get("/posts/{post_id}", response_model=schemas.PostResponse)
+@router.get("/{post_id}", response_model=schemas.PostResponse)
 async def get_post(post_id: int, db: Session = Depends(get_db)) -> orm.Post:
     post = db.query(orm.Post).filter(orm.Post.id == post_id).first()
     if post is None:
@@ -34,7 +34,7 @@ async def get_post(post_id: int, db: Session = Depends(get_db)) -> orm.Post:
     return post
 
 
-@router.delete("/posts/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_post(post_id: int, db: Session = Depends(get_db)):
     post = db.query(orm.Post).filter(orm.Post.id == post_id)
     if post.first() is None:
@@ -44,7 +44,7 @@ async def delete_post(post_id: int, db: Session = Depends(get_db)):
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.put("/posts/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.put("/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def update_post(post_id: int, post: schemas.Post, db: Session = Depends(get_db)):
     post_query = db.query(orm.Post).filter(orm.Post.id == post_id)
     if post_query.first() is None:
