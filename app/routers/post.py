@@ -1,23 +1,21 @@
 from typing import List
-from fastapi import Depends, FastAPI, HTTPException, Response, status
+
+from fastapi import APIRouter, Depends, HTTPException, Response, status
+
+from .. import schemas, orm
+from ..database import get_db
 from sqlalchemy.orm import Session
 
-from .utils import hash_password
-from .database import engine, get_db
-from . import schemas, orm
+router = APIRouter()
 
 
-app = FastAPI()
-orm.Base.metadata.create_all(engine)
-
-
-@app.get("/posts", response_model=List[schemas.PostResponse])
+@router.get("/posts", response_model=List[schemas.PostResponse])
 async def get_posts(db: Session = Depends(get_db)) -> dict:
     result = db.query(orm.Post).all()
     return result
 
 
-@app.post(
+@router.post(
     "/posts", status_code=status.HTTP_201_CREATED, response_model=schemas.PostResponse
 )
 async def create_post(post: schemas.Post, db: Session = Depends(get_db)) -> dict:
@@ -28,7 +26,7 @@ async def create_post(post: schemas.Post, db: Session = Depends(get_db)) -> dict
     return new_post
 
 
-@app.get("/posts/{post_id}", response_model=schemas.PostResponse)
+@router.get("/posts/{post_id}", response_model=schemas.PostResponse)
 async def get_post(post_id: int, db: Session = Depends(get_db)) -> orm.Post:
     post = db.query(orm.Post).filter(orm.Post.id == post_id).first()
     if post is None:
@@ -36,7 +34,7 @@ async def get_post(post_id: int, db: Session = Depends(get_db)) -> orm.Post:
     return post
 
 
-@app.delete("/posts/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/posts/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_post(post_id: int, db: Session = Depends(get_db)):
     post = db.query(orm.Post).filter(orm.Post.id == post_id)
     if post.first() is None:
@@ -46,7 +44,7 @@ async def delete_post(post_id: int, db: Session = Depends(get_db)):
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@app.put("/posts/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.put("/posts/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def update_post(post_id: int, post: schemas.Post, db: Session = Depends(get_db)):
     post_query = db.query(orm.Post).filter(orm.Post.id == post_id)
     if post_query.first() is None:
@@ -54,17 +52,3 @@ async def update_post(post_id: int, post: schemas.Post, db: Session = Depends(ge
     post_query.update(post.dict(), synchronize_session=False)
     db.commit()
     return post_query.first()
-
-
-@app.post(
-    "/users",
-    status_code=status.HTTP_201_CREATED,
-    response_model=schemas.UserCreateResponse,
-)
-async def create_post(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    user.password = hash_password(user.password)
-    new_user = orm.User(**user.dict())
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    return new_user
