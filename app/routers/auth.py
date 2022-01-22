@@ -13,7 +13,7 @@ async def login(request: schemas.UserLogin, db: Session = Depends(get_db)):
     user = db.query(orm.User).filter(orm.User.email == request.email).first()
     if user is None or not verify_password(request.password, user.password):
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
+            status_code=status.HTTP_403_FORBIDDEN,
             detail="Username or password is incorrect",
         )
     token = oauth2.create_access_token({"id": user.id, "email": user.email})
