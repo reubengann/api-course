@@ -13,7 +13,7 @@ class Post(Base):
     owner_id = sa.Column(
         sa.Integer, sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
-    owner = relationship("User",)
+    owner = relationship("User")
 
 
 class User(Base):
