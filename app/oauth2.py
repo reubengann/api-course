@@ -1,4 +1,5 @@
 import datetime
+import os
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
@@ -7,7 +8,9 @@ from . import schemas
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
-SECRET_KEY = "aaaaaaa"  # for testing purposes
+SECRET_KEY = os.environ.get("SECRET_KEY")
+if SECRET_KEY is None:
+    raise Exception("SECRET_KEY must be set as an environment variable")
 ALGORITHM = jwt.ALGORITHMS.HS256
 ACCESS_TOKEN_EXPIRATION_MINUTES = 30
 
