@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 
@@ -10,8 +10,16 @@ router = APIRouter(prefix="/posts", tags=["Posts"])
 
 
 @router.get("/", response_model=List[schemas.PostResponse])
-async def get_posts(db: Session = Depends(get_db)) -> dict:
-    result = db.query(orm.Post).all()
+async def get_posts(
+    db: Session = Depends(get_db),
+    limit: int = 10,
+    skip: int = 0,
+    search: Optional[str] = None,
+) -> dict:
+    query = db.query(orm.Post)
+    if search is not None:
+        query = query.filter(orm.Post.title.contains(search))
+    result = query.limit(limit).offset(skip).all()
     return result
 
 
