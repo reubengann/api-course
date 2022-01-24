@@ -23,7 +23,7 @@ async def create_post(
     db: Session = Depends(get_db),
     token: schemas.Token = Depends(oauth2.verify_token),
 ) -> dict:
-    new_post = orm.Post(**post.dict())
+    new_post = orm.Post(owner_id=token.id, **post.dict())
     db.add(new_post)
     db.commit()
     db.refresh(new_post)
@@ -39,20 +39,35 @@ async def get_post(post_id: int, db: Session = Depends(get_db)) -> orm.Post:
 
 
 @router.delete("/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_post(post_id: int, db: Session = Depends(get_db)):
-    post = db.query(orm.Post).filter(orm.Post.id == post_id)
-    if post.first() is None:
+async def delete_post(
+    post_id: int,
+    db: Session = Depends(get_db),
+    token: schemas.Token = Depends(oauth2.verify_token),
+):
+    post_query = db.query(orm.Post).filter(orm.Post.id == post_id)
+    post_result = post_query.first()
+    if post_result is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-    post.delete(synchronize_session=False)
+    if post_result.owner_id != token.id:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+    post_query.delete(synchronize_session=False)
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.put("/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def update_post(post_id: int, post: schemas.Post, db: Session = Depends(get_db)):
+async def update_post(
+    post_id: int,
+    post: schemas.Post,
+    db: Session = Depends(get_db),
+    token: schemas.Token = Depends(oauth2.verify_token),
+):
     post_query = db.query(orm.Post).filter(orm.Post.id == post_id)
-    if post_query.first() is None:
+    post_result = post_query.first()
+    if post_result is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    if post_result.owner_id != token.id:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
     post_query.update(post.dict(), synchronize_session=False)
     db.commit()
     return post_query.first()
