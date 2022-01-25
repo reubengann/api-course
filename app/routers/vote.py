@@ -13,6 +13,10 @@ async def vote(
     db: Session = Depends(get_db),
     token: schemas.Token = Depends(oauth2.verify_token),
 ) -> dict:
+    if db.query(orm.Post).filter(orm.Post.id == vote_data.post_id).first() is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Post does not exist"
+        )
     vote_query = db.query(orm.Vote).filter(
         orm.Vote.post_id == vote_data.post_id, orm.Vote.user_id == token.id
     )
