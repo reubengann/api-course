@@ -21,3 +21,19 @@ class User(Base):
     id = sa.Column(sa.Integer, primary_key=True)
     email = sa.Column(sa.String, nullable=False, unique=True)
     password = sa.Column(sa.String, nullable=False)
+
+
+class Vote(Base):
+    __tablename__ = "votes"
+    post_id = sa.Column(
+        sa.Integer,
+        sa.ForeignKey("posts.id", ondelete="CASCADE"),
+        nullable=False,
+        primary_key=True,
+    )
+    user_id = sa.Column(
+        sa.Integer,
+        sa.ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        primary_key=True,
+    )

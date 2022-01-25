@@ -1,4 +1,5 @@
 import datetime
+from typing import Literal
 from pydantic import BaseModel, EmailStr
 
 
@@ -46,3 +47,8 @@ class UserLoginResponse(BaseModel):
 class Token(BaseModel):
     id: int
     email: EmailStr
+
+
+class Vote(BaseModel):
+    post_id: int
+    vote_direction: Literal[0, 1]
