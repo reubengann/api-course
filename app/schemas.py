@@ -23,7 +23,8 @@ class UserCreateResponse(BaseModel):
 class PostResponse(Post):
     id: int
     created_at: datetime.datetime
-    owner: UserCreateResponse
+    owner: EmailStr
+    votes: int
 
     class Config:
         orm_mode = True

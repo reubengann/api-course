@@ -1,6 +1,7 @@
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
+from sqlalchemy import func
 
 from .. import schemas, orm, oauth2
 from ..database import get_db
@@ -16,10 +17,24 @@ async def get_posts(
     skip: int = 0,
     search: Optional[str] = None,
 ) -> dict:
-    query = db.query(orm.Post)
+    query = (
+        db.query(
+            orm.Post.id,
+            orm.User.email.label("owner"),
+            orm.Post.created_at,
+            orm.Post.title,
+            orm.Post.content,
+            func.count(orm.Vote.post_id).label("votes"),
+        )
+        .join(orm.User, orm.User.id == orm.Post.owner_id)
+        .outerjoin(orm.Vote, orm.Post.id == orm.Vote.post_id)
+        .group_by(orm.Post.id)
+    )
     if search is not None:
         query = query.filter(orm.Post.title.contains(search))
     result = query.limit(limit).offset(skip).all()
+    result = query.all()
+    print(result)
     return result
 
 
@@ -40,7 +55,20 @@ async def create_post(
 
 @router.get("/{post_id}", response_model=schemas.PostResponse)
 async def get_post(post_id: int, db: Session = Depends(get_db)) -> orm.Post:
-    post = db.query(orm.Post).filter(orm.Post.id == post_id).first()
+    query = (
+        db.query(
+            orm.Post.id,
+            orm.User.email.label("owner"),
+            orm.Post.created_at,
+            orm.Post.title,
+            orm.Post.content,
+            func.count(orm.Vote.post_id).label("votes"),
+        )
+        .join(orm.User, orm.User.id == orm.Post.owner_id)
+        .outerjoin(orm.Vote, orm.Post.id == orm.Vote.post_id)
+        .group_by(orm.Post.id)
+    )
+    post = query.filter(orm.Post.id == post_id).first()
     if post is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     return post
