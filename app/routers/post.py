@@ -28,7 +28,13 @@ async def get_posts(
         )
         .join(orm.User, orm.User.id == orm.Post.owner_id)
         .outerjoin(orm.Vote, orm.Post.id == orm.Vote.post_id)
-        .group_by(orm.Post.id)
+        .group_by(
+            orm.Post.id,
+            orm.User.email,
+            orm.Post.created_at,
+            orm.Post.title,
+            orm.Post.content,
+        )
     )
     if search is not None:
         query = query.filter(orm.Post.title.contains(search))
@@ -39,7 +45,7 @@ async def get_posts(
 
 
 @router.post(
-    "/", status_code=status.HTTP_201_CREATED, response_model=schemas.PostResponse
+    "/", status_code=status.HTTP_201_CREATED, response_model=schemas.PostCreatedResponse
 )
 async def create_post(
     post: schemas.Post,
@@ -66,7 +72,13 @@ async def get_post(post_id: int, db: Session = Depends(get_db)) -> orm.Post:
         )
         .join(orm.User, orm.User.id == orm.Post.owner_id)
         .outerjoin(orm.Vote, orm.Post.id == orm.Vote.post_id)
-        .group_by(orm.Post.id)
+        .group_by(
+            orm.Post.id,
+            orm.User.email,
+            orm.Post.created_at,
+            orm.Post.title,
+            orm.Post.content,
+        )
     )
     post = query.filter(orm.Post.id == post_id).first()
     if post is None:

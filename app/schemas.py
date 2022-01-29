@@ -20,6 +20,11 @@ class UserCreateResponse(BaseModel):
         orm_mode = True
 
 
+class PostCreatedResponse(Post):
+    class Config:
+        orm_mode = True
+
+
 class PostResponse(Post):
     id: int
     created_at: datetime.datetime
