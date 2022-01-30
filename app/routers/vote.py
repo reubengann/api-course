@@ -33,7 +33,7 @@ async def vote(
         return {"message": "success"}
     if vote_row is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="No vote to undo"
+            status_code=status.HTTP_409_CONFLICT, detail="No vote to undo"
         )
     vote_query.delete(synchronize_session=False)
     db.commit()
