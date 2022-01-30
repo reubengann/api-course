@@ -14,6 +14,7 @@ class PostCreate(Post):
 
 
 class UserCreateResponse(BaseModel):
+    id: int
     email: EmailStr
 
     class Config:
