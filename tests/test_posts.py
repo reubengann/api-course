@@ -22,4 +22,6 @@ def test_create_post(authorized_client, test_user, example_posts):
         "/posts/", json={"title": "Cool ass title", "content": "ooby dooby"}
     )
     assert res.status_code == 201
-    assert res.json()["title"] == "Cool ass title"
+    response = res.json()
+    assert response["title"] == "Cool ass title"
+    assert response["published"]
