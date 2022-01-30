@@ -1,19 +1,4 @@
-import pytest
-from app.database import get_db
-from app.orm import Base
-from app.main import app
-from fastapi.testclient import TestClient
-
-from tests.db import testing_get_db, engine
-
-app.dependency_overrides[get_db] = testing_get_db
-
-
-@pytest.fixture
-def client():
-    Base.metadata.create_all(bind=engine)
-    yield TestClient(app)
-    Base.metadata.drop_all(bind=engine)
+from .db import session, client
 
 
 def test_create_user(client):
