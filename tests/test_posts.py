@@ -4,8 +4,14 @@ def test_get_all_posts(authorized_client, example_posts):
     assert len(example_posts) == len(response.json())
 
 
-def test_get_one_posts(authorized_client, example_posts):
+def test_get_one_post(authorized_client, example_posts):
     post_id = example_posts[0].id
     response = authorized_client.get(f"/posts/{post_id}")
     assert response.status_code == 200
     assert response.json()["content"] == example_posts[0].content
+
+
+def test_get_nonexistant_post(authorized_client, example_posts):
+    post_id = max(e.id for e in example_posts) + 1
+    response = authorized_client.get(f"/posts/{post_id}")
+    assert response.status_code == 404
