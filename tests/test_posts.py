@@ -15,3 +15,11 @@ def test_get_nonexistant_post(authorized_client, example_posts):
     post_id = max(e.id for e in example_posts) + 1
     response = authorized_client.get(f"/posts/{post_id}")
     assert response.status_code == 404
+
+
+def test_create_post(authorized_client, test_user, example_posts):
+    res = authorized_client.post(
+        "/posts/", json={"title": "Cool ass title", "content": "ooby dooby"}
+    )
+    assert res.status_code == 201
+    assert res.json()["title"] == "Cool ass title"

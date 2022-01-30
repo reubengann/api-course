@@ -51,7 +51,7 @@ def test_user(client):
 
 @pytest.fixture
 def token(test_user):
-    return create_access_token({"user_id": test_user.get("id")})
+    return create_access_token({"id": test_user.get("id"), "email": test_user["email"]})
 
 
 @pytest.fixture
