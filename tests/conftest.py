@@ -37,3 +37,11 @@ def session():
         yield db
     finally:
         db.close()
+
+
+@pytest.fixture
+def test_user(client):
+    user_data = {"email": "test@example.com", "password": "password123"}
+    result = client.post("/users/", json=user_data).json()
+    result["password"] = user_data["password"]
+    return result

@@ -3,14 +3,6 @@ from jose import jwt
 from app.settings import settings
 
 
-@pytest.fixture
-def test_user(client):
-    user_data = {"email": "test@example.com", "password": "password123"}
-    result = client.post("/users/", json=user_data).json()
-    result["password"] = user_data["password"]
-    return result
-
-
 def test_create_user(client):
     result = client.post(
         "/users/", json={"email": "test2@example.com", "password": "password123"}
